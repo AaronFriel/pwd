@@ -2,6 +2,15 @@
 authors = ["Paul Woolcock <pwoolcock@tenable.com>"]
 name = "pwd"
 version = "0.1.0"
+documentation = "https://docs.rs/pwd"
+homepage = "https://gitlab.com/pwoolcoc/pwd.git"
+repository = "https://gitlab.com/pwoolcoc/pwd.git"
+license = "MIT/Apache-2.0"
+readme = "README.adoc"
+description = """
+Safe interface to pwd.h
+"""
+
 [dependencies]
 error-chain = "0.11.0"
 libc = "0.2"
