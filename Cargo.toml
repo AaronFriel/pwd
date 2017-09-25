@@ -1,7 +1,7 @@
 [package]
 authors = ["Paul Woolcock <pwoolcock@tenable.com>"]
 name = "pwd"
-version = "0.1.0"
+version = "1.0.0"
 documentation = "https://docs.rs/pwd"
 homepage = "https://gitlab.com/pwoolcoc/pwd.git"
 repository = "https://gitlab.com/pwoolcoc/pwd.git"
