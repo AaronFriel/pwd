@@ -1,6 +1,6 @@
 use std::ffi::{CStr, CString};
 
-use libc::{getuid, c_char, getpwnam, getpwuid, passwd};
+use libc::{getuid, c_char, getpwnam, getpwuid, passwd, getpwent, setpwent, endpwent};
 
 use errors::*;
 
@@ -23,6 +23,43 @@ pub struct Passwd {
     pub gecos: Option<String>,
     pub dir: String,
     pub shell: String,
+}
+
+// has to be public so it can be used, but we don't want people actually using it directly
+#[derive(Debug, Clone, PartialEq)]
+#[doc(hidden)]
+pub struct PasswdIter {
+    inited: bool,
+}
+
+impl PasswdIter {
+    fn new() -> PasswdIter {
+        PasswdIter { inited: false }
+    }
+}
+
+impl Iterator for PasswdIter {
+    type Item = Passwd;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.inited {
+            unsafe {
+                setpwent();
+            };
+            self.inited = true;
+        }
+
+        let next = unsafe {
+            getpwent()
+        };
+
+        if next.is_null() {
+            unsafe { endpwent(); };
+            return None;
+        }
+
+        Some(Passwd::from_unsafe(next))
+    }
 }
 
 fn cstr_to_string(cstr: *const c_char) -> String {
@@ -138,6 +175,8 @@ impl Passwd {
 
     /// Shortcut for `Passwd::from_uid(libc::getuid() as u32)`, so see the docs for that constructor
     /// 
+    /// # Example
+    /// 
     /// ```rust
     /// # extern crate pwd;
     /// # use pwd::Result;
@@ -161,6 +200,34 @@ impl Passwd {
     pub fn current_user() -> Option<Passwd> {
         let uid = unsafe { getuid() };
         Passwd::from_uid(uid as u32)
+    }
+
+    /// Returns an iterator over all entries in the /etc/passwd file
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// # extern crate pwd;
+    /// # use pwd::Result;
+    /// use pwd::Passwd;
+    /// 
+    /// # fn run() -> Result<()> {
+    /// let passwds = Passwd::iter();
+    /// 
+    /// for passwd in passwds {
+    ///     println!("username is {}", passwd.name);
+    /// }
+    /// #   Ok(())
+    /// # }
+    /// # 
+    /// # fn main() {
+    /// #   if let Err(_) = run() {
+    /// #     eprintln!("error running example");
+    /// #   }
+    /// # }
+    /// ```
+    pub fn iter() -> PasswdIter {
+        PasswdIter::new()
     }
 }
 
