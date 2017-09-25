@@ -1,10 +1,19 @@
-
 use std::ffi::{CStr, CString};
 
 use libc::{getuid, c_char, getpwnam, getpwuid, passwd};
 
 use errors::*;
 
+/// The main struct for the library, a safe version
+/// of the POSIX `struct passwd`
+/// 
+/// There are 2 ways to construct a `Passwd` instance (other
+/// than assigning fields by hand). You can look up a user account
+/// by username with `Passwd::from_name(String)`, or by uid with
+/// `Passwd::from_uid(u32)`.
+/// 
+/// There is a shortcut function, `Passwd::current_user()`, which is just
+/// short for `Passwd::from_uid(unsafe { libc::getuid() } as u32)`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Passwd {
     pub name: String,
@@ -21,7 +30,6 @@ fn cstr_to_string(cstr: *const c_char) -> String {
         CStr::from_ptr(cstr).to_string_lossy().into_owned()
     }
 }
-
 
 impl Passwd {
     fn from_unsafe(pwd: *mut passwd) -> Passwd {
@@ -50,6 +58,32 @@ impl Passwd {
         }
     }
 
+    /// Looks up the username and returns a Passwd with the user's values, if the user is found
+    /// 
+    /// This is `Result<Option<>>` because the operation to convert a rust String to a cstring could fail
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// # extern crate pwd;
+    /// # use pwd::Result;
+    /// use pwd::Passwd;
+    /// 
+    /// # fn run() -> Result<()> {
+    /// let pwd = Passwd::from_name("bob").expect("Failed to convert 'bob' to a c-string");
+    /// 
+    /// if let Some(passwd) = pwd {
+    ///     println!("uid is {}", passwd.uid);
+    /// }
+    /// #   Ok(())
+    /// # }
+    /// # 
+    /// # fn main() {
+    /// #   if let Err(_) = run() {
+    /// #     eprintln!("error running example");
+    /// #   }
+    /// # }
+    /// ```
     pub fn from_name(name: &str) -> Result<Option<Passwd>> {
         let cname = CString::new(name)
                             .chain_err(|| format!("Could not make CString out of '{}'", name))?;
@@ -64,7 +98,34 @@ impl Passwd {
         }
     }
 
-    pub fn from_u32(uid: u32) -> Option<Passwd> {
+    /// Looks up the uid and returns a Passwd with the user's values, if the user is found
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// # extern crate pwd;
+    /// # extern crate libc;
+    /// # use pwd::Result;
+    /// use libc::getuid;
+    /// use pwd::Passwd;
+    /// 
+    /// # fn run() -> Result<()> {
+    /// let uid = unsafe { getuid() };
+    /// let pwd = Passwd::from_uid(uid as u32);
+    /// 
+    /// if let Some(passwd) = pwd {
+    ///     println!("username is {}", passwd.name);
+    /// }
+    /// #   Ok(())
+    /// # }
+    /// # 
+    /// # fn main() {
+    /// #   if let Err(_) = run() {
+    /// #     eprintln!("error running example");
+    /// #   }
+    /// # }
+    /// ```
+    pub fn from_uid(uid: u32) -> Option<Passwd> {
         let pwd = unsafe {
             getpwuid(uid)
         };
@@ -75,9 +136,31 @@ impl Passwd {
         }
     }
 
+    /// Shortcut for `Passwd::from_uid(libc::getuid() as u32)`, so see the docs for that constructor
+    /// 
+    /// ```rust
+    /// # extern crate pwd;
+    /// # use pwd::Result;
+    /// use pwd::Passwd;
+    /// 
+    /// # fn run() -> Result<()> {
+    /// let pwd = Passwd::current_user();
+    /// 
+    /// if let Some(passwd) = pwd {
+    ///     println!("username is {}", passwd.name);
+    /// }
+    /// #   Ok(())
+    /// # }
+    /// # 
+    /// # fn main() {
+    /// #   if let Err(_) = run() {
+    /// #     eprintln!("error running example");
+    /// #   }
+    /// # }
+    /// ```
     pub fn current_user() -> Option<Passwd> {
         let uid = unsafe { getuid() };
-        Passwd::from_u32(uid as u32)
+        Passwd::from_uid(uid as u32)
     }
 }
 
