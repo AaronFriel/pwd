@@ -7,6 +7,8 @@ homepage = "https://gitlab.com/pwoolcoc/pwd.git"
 repository = "https://gitlab.com/pwoolcoc/pwd.git"
 license = "MIT/Apache-2.0"
 readme = "README.adoc"
+keywords = ["unix", "passwd", "pwd", "ffi", "linux"]
+categories = ["external-ffi-bindings", "filesystem"]
 description = """
 Safe interface to pwd.h
 """
