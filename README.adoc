@@ -6,10 +6,11 @@ This is a small veneer over pwd.h, mostly just hides away the `unsafe` parts.
 
 == Installation
 
-In your `Cargo.toml`, add the following line:
+In the `[dependencies]` section of your `Cargo.toml`, add the following line:
 
 [source="rust"]
 ----
+[dependencies]
 pwd = "1"
 ----
 
@@ -22,7 +23,7 @@ In your crate root, add:
 extern crate pwd;
 ----
 
-== Example
+=== Example
 
 [source="rust"]
 ----
