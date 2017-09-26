@@ -122,8 +122,10 @@ impl Passwd {
     /// # }
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Passwd>> {
-        let cname = CString::new(name)
-                            .chain_err(|| format!("Could not make CString out of '{}'", name))?;
+        let cname = match CString::new(name) {
+            Ok(n) => n,
+            Err(e) => return Err(Error::StringConvError(format!("Could not convert Rust string to C string: {:?}", e))),
+        };
         let ptr = cname.as_ptr();
         let pwd = unsafe {
             getpwnam(ptr)

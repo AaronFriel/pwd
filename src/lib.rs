@@ -5,8 +5,6 @@
 //! on windows, or attempts to make any kind of similar interface for windows
 
 #[cfg(not(windows))]
-#[macro_use] extern crate error_chain;
-#[cfg(not(windows))]
 extern crate libc;
 
 #[cfg(not(windows))]
