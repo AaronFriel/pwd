@@ -1,5 +1,7 @@
 = pwd module for unix-y systems
 
+image::https://img.shields.io/crates/v/pwd.svg?style=flat-square[link="https://crates.io/crates/pwd",caption="crates.io"]
+
 This is a small veneer over pwd.h, mostly just hides away the `unsafe` parts.
 
 == Installation
