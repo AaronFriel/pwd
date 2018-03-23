@@ -64,8 +64,12 @@ impl Iterator for PasswdIter {
     }
 }
 
-fn cstr_to_string(cstr: *const c_char) -> String {
-    unsafe { CStr::from_ptr(cstr).to_string_lossy().into_owned() }
+fn cstr_to_string(cstr: *const c_char) -> Result<String> {
+    let cstr = unsafe { CStr::from_ptr(cstr) };
+    Ok(cstr.to_str()
+        .map_err(|e| Error::StringConvError(
+                            format!("Could not convert C string to Rust string: {:?}", e)))?
+        .to_string())
 }
 
 impl Passwd {
@@ -78,23 +82,23 @@ impl Passwd {
         let password = if pwd.pw_passwd.is_null() {
             None
         } else {
-            Some(cstr_to_string(pwd.pw_passwd))
+            Some(cstr_to_string(pwd.pw_passwd)?)
         };
 
         let gecos = if pwd.pw_gecos.is_null() {
             None
         } else {
-            Some(cstr_to_string(pwd.pw_gecos))
+            Some(cstr_to_string(pwd.pw_gecos)?)
         };
 
         Ok(Passwd {
-            name: cstr_to_string(pwd.pw_name),
+            name: cstr_to_string(pwd.pw_name)?,
             passwd: password,
             uid: pwd.pw_uid as u32,
             gid: pwd.pw_gid as u32,
             gecos: gecos,
-            dir: cstr_to_string(pwd.pw_dir),
-            shell: cstr_to_string(pwd.pw_shell),
+            dir: cstr_to_string(pwd.pw_dir)?,
+            shell: cstr_to_string(pwd.pw_shell)?,
         })
     }
 
