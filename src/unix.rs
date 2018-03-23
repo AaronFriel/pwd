@@ -67,15 +67,14 @@ impl Iterator for PasswdIter {
 fn cstr_to_string(cstr: *const c_char) -> Result<String> {
     let cstr = unsafe { CStr::from_ptr(cstr) };
     Ok(cstr.to_str()
-        .map_err(|e| Error::StringConvError(
-                            format!("Could not convert C string to Rust string: {:?}", e)))?
+        .map_err(|e| PwdError::StringConvError(format!("{:?}", e)))?
         .to_string())
 }
 
 impl Passwd {
     fn from_unsafe(pwd: *mut passwd) -> Result<Passwd> {
         if pwd.is_null() {
-            return Err(Error::NullPtr);
+            return Err(PwdError::NullPtr);
         }
         // take ownership, since this shouldn't be null if we get here
         let pwd = unsafe { *pwd };
@@ -129,7 +128,7 @@ impl Passwd {
     /// # }
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Passwd>> {
-        let cname = CString::new(name).map_err(|e| Error::StringConvError(format!("Could not convert Rust string to C string: {:?}", e)))?;
+        let cname = CString::new(name).map_err(|e| PwdError::StringConvError(format!("{:?}", e)))?;
         let pwd = unsafe { getpwnam(cname.as_ptr()) };
         if pwd.is_null() {
             Ok(None)

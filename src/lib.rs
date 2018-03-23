@@ -6,6 +6,7 @@
 
 #[cfg(not(windows))]
 extern crate libc;
+#[macro_use]
 extern crate failure;
 
 #[cfg(not(windows))]
