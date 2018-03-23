@@ -56,7 +56,11 @@ impl Iterator for PasswdIter {
             return None;
         }
 
-        Some(Passwd::from_unsafe(next))
+        if let Ok(passwd) = Passwd::from_unsafe(next) {
+            Some(passwd)
+        } else {
+            None
+        }
     }
 }
 
@@ -65,8 +69,11 @@ fn cstr_to_string(cstr: *const c_char) -> String {
 }
 
 impl Passwd {
-    fn from_unsafe(pwd: *mut passwd) -> Passwd {
-        // take ownership? this will panic if null...so don't do that?
+    fn from_unsafe(pwd: *mut passwd) -> Result<Passwd> {
+        if pwd.is_null() {
+            return Err(Error::NullPtr);
+        }
+        // take ownership, since this shouldn't be null if we get here
         let pwd = unsafe { *pwd };
         let password = if pwd.pw_passwd.is_null() {
             None
@@ -80,7 +87,7 @@ impl Passwd {
             Some(cstr_to_string(pwd.pw_gecos))
         };
 
-        Passwd {
+        Ok(Passwd {
             name: cstr_to_string(pwd.pw_name),
             passwd: password,
             uid: pwd.pw_uid as u32,
@@ -88,7 +95,7 @@ impl Passwd {
             gecos: gecos,
             dir: cstr_to_string(pwd.pw_dir),
             shell: cstr_to_string(pwd.pw_shell),
-        }
+        })
     }
 
     /// Looks up the username and returns a Passwd with the user's values, if the user is found
@@ -123,7 +130,7 @@ impl Passwd {
         if pwd.is_null() {
             Ok(None)
         } else {
-            Ok(Some(Passwd::from_unsafe(pwd)))
+            Ok(Some(Passwd::from_unsafe(pwd)?))
         }
     }
 
@@ -156,11 +163,7 @@ impl Passwd {
     /// ```
     pub fn from_uid(uid: u32) -> Option<Passwd> {
         let pwd = unsafe { getpwuid(uid) };
-        if pwd.is_null() {
-            None
-        } else {
-            Some(Passwd::from_unsafe(pwd))
-        }
+        Passwd::from_unsafe(pwd).ok()
     }
 
     /// Shortcut for `Passwd::from_uid(libc::getuid() as u32)`, so see the docs for that constructor
@@ -218,5 +221,17 @@ impl Passwd {
     /// ```
     pub fn iter() -> PasswdIter {
         PasswdIter::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::u32;
+
+    #[test]
+    fn test_null_pwd_from_uid() {
+        let should_be_none = Passwd::from_uid(u32::MAX);
+        assert_eq!(should_be_none, None);
     }
 }
