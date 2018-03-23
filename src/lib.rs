@@ -6,6 +6,7 @@
 
 #[cfg(not(windows))]
 extern crate libc;
+extern crate failure;
 
 #[cfg(not(windows))]
 pub use errors::*;
